@@ -14,7 +14,7 @@
       "padding": true
     }
   },
-    "viewScript": "file:./frontend.js"
+  "viewScript": "file:./frontend.js",
   "style": "kelsie-faq-block",
   "editorStyle": "kelsie-faq-block-editor",
   "acf": {

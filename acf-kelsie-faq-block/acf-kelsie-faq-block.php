@@ -2,23 +2,36 @@
 /**
  * Plugin Name: Kelsie ACF FAQ Block
  * Description: ACF block for FAQ repeater with optional Rank Math schema.
- * Version:     1.0.1
+ * Version:     1.0.2
  * Author:      Kelsie Cakes
  */
 
 if (!defined('ABSPATH')) exit;
 
+/** ---------------------------
+ *  CONFIG (edit in one place)
+ * --------------------------- */
+define('KELSIE_BLOCK_DIR', __DIR__ . '/blocks/kelsie-faq');
+define('KELSIE_BLOCK_NAME', 'kelsiecakes/faq-list');    // block.json "name"
+
+define('KELSIE_FAQ_REPEATER', 'faq_acf_repeater');      // repeater
+define('KELSIE_FAQ_QUESTION', 'faq_question');          // sub field (Text)
+define('KELSIE_FAQ_ANSWER',   'faq_answer');            // sub field (WYSIWYG)
+define('KELSIE_FAQ_CATEGORY', 'faq_category');          // sub field (Checkbox)
+
+define('KELSIE_OPTIONS_ID',   'option');                // ACF Options Page id
+define('KELSIE_SCHEMA_KEY',   'kelsie_faq');            // array key in Rank Math graph
+
 add_action('admin_init', function () {
-    // Show notice only to admins if ACF is missing.
     if (!class_exists('ACF') && current_user_can('activate_plugins')) {
         add_action('admin_notices', function () {
-            echo '<div class="notice notice-error"><p><strong>Kelsie ACF FAQ Block:</strong> Advanced Custom Fields (ACF) is inactive or missing. The block will render a basic placeholder until ACF is active.</p></div>';
+            echo '<div class="notice notice-error"><p><strong>Kelsie ACF FAQ Block:</strong> ACF is inactive. The block will show a placeholder until ACF is active.</p></div>';
         });
     }
 });
 
 add_action('init', function () {
-    // Register styles used by block.json
+    // Styles referenced by block.json
     $style_path        = plugin_dir_path(__FILE__) . 'assets/style.css';
     $editor_style_path = plugin_dir_path(__FILE__) . 'assets/editor.css';
 
@@ -36,11 +49,11 @@ add_action('init', function () {
         file_exists($editor_style_path) ? filemtime($editor_style_path) : null
     );
 
-    // Always register the block type (safe even without ACF; our renderer will guard).
-    register_block_type(__DIR__ . '/blocks/kelsie-faq');
+    // Safe even if ACF is off; render.php guards itself.
+    register_block_type(KELSIE_BLOCK_DIR);
 });
 
-// Optional ACF Options Page (only if ACF exists)
+// Optional: create an ACF Options Page if none exists (harmless if you already have one)
 add_action('acf/init', function () {
     if (function_exists('acf_add_options_page')) {
         if (!acf_get_options_pages()) {
@@ -56,33 +69,27 @@ add_action('acf/init', function () {
     }
 });
 
-/**
- * Rank Math schema integration — add only if Rank Math is active.
- * (Adding the filter without Rank Math is harmless, but this avoids extra work.)
- */
+/** ---------------------------
+ *  Rank Math integration (optional)
+ * --------------------------- */
 add_action('plugins_loaded', function () {
-    if (!defined('RANK_MATH_VERSION')) {
-        return;
-    }
+    if (!defined('RANK_MATH_VERSION')) return;
 
     add_filter('rank_math/json_ld', function ($data, $jsonld) {
         if (!is_singular()) return $data;
 
         global $post;
-        if (!$post || !function_exists('has_block') || !has_block('kelsiecakes/faq-list', $post)) {
+        if (!$post || !function_exists('has_block') || !has_block(KELSIE_BLOCK_NAME, $post)) {
             return $data;
         }
+        if (!function_exists('have_rows')) return $data; // ACF off
 
-        // Require ACF to build schema
-        if (!function_exists('have_rows')) {
-            return $data;
-        }
-
+        // Prefer per-post rows; fall back to Options Page.
         $source = null;
-        if (have_rows('faq_acf_repeater', $post->ID)) {
-            $source = ['faq_acf_repeater', $post->ID];
-        } elseif (have_rows('faq_acf_repeater', 'option')) {
-            $source = ['faq_acf_repeater', 'option'];
+        if (have_rows(KELSIE_FAQ_REPEATER, $post->ID)) {
+            $source = [KELSIE_FAQ_REPEATER, $post->ID];
+        } elseif (have_rows(KELSIE_FAQ_REPEATER, KELSIE_OPTIONS_ID)) {
+            $source = [KELSIE_FAQ_REPEATER, KELSIE_OPTIONS_ID];
         } else {
             return $data;
         }
@@ -91,8 +98,8 @@ add_action('plugins_loaded', function () {
 
         while (have_rows($source[0], $source[1])) {
             the_row();
-            $q = trim(wp_strip_all_tags(get_sub_field('faq_question')));
-            $a = trim(wp_strip_all_tags(wpautop(get_sub_field('faq_answer'))));
+            $q = trim(wp_strip_all_tags(get_sub_field(KELSIE_FAQ_QUESTION)));
+            $a = trim(wp_strip_all_tags(wpautop(get_sub_field(KELSIE_FAQ_ANSWER))));
             if ($q && $a) {
                 $faq['mainEntity'][] = [
                     '@type' => 'Question',
@@ -106,7 +113,7 @@ add_action('plugins_loaded', function () {
         }
 
         if (!empty($faq['mainEntity'])) {
-            $data['kelsie_faq'] = $faq;
+            $data[KELSIE_SCHEMA_KEY] = $faq; // append, don’t overwrite
         }
 
         return $data;

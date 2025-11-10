@@ -76,3 +76,75 @@
     applyFilter();
   }
 })();
+(function() {
+  function norm(s) {
+    return (s || '')
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '');
+  }
+
+  function initFAQScope(scope) {
+    const input   = scope.querySelector('.kelsie-faq-search__input');
+    const clear   = scope.querySelector('.kelsie-faq-search__clear');
+    const countEl = scope.querySelector('.kelsie-faq-search__count');
+    const items   = scope.querySelectorAll('.kelsie-faq-list__item');
+
+    if (!input || !items.length) return;
+
+    function haystack(el) {
+      const qEl = el.querySelector('.kelsie-faq-list__question');
+      const aEl = el.querySelector('.kelsie-faq-list__answer');
+      return norm(
+        (qEl ? qEl.textContent : '') + ' ' +
+        (aEl ? aEl.textContent : '') + ' ' +
+        (el.getAttribute('data-cats') || '')
+      );
+    }
+
+    // Precompute haystacks once
+    const stacks = new WeakMap();
+    items.forEach(el => stacks.set(el, haystack(el)));
+
+    function applyFilter() {
+      const q = norm(input.value.trim());
+      let visible = 0;
+
+      items.forEach(el => {
+        const match = !q || stacks.get(el).includes(q);
+        el.hidden = !match;
+        if (match) visible++;
+      });
+
+      if (countEl) {
+        countEl.textContent = visible === 1 ? '1 result' : `${visible} results`;
+      }
+    }
+
+    input.addEventListener('input', applyFilter);
+    if (clear) {
+      clear.addEventListener('click', () => {
+        input.value = '';
+        applyFilter();
+        input.focus();
+      });
+    }
+
+    // Initial
+    applyFilter();
+  }
+
+  function initAll() {
+    document
+      .querySelectorAll('.wp-block[data-type="kelsiecakes/faq-list"], .kelsie-faq-block')
+      .forEach(initFAQScope);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAll);
+  } else {
+    initAll();
+  }
+})();
+

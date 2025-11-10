@@ -33,6 +33,22 @@ if ($is_preview && !empty($rows)) {
 ?>
 <section id="<?php echo esc_attr($anchor); ?>" class="<?php echo esc_attr($class_name); ?>">
 <?php if (!empty($rows)) : ?>
+    <div class="kelsie-faq-list__toolbar" aria-label="FAQ filters">
+  <label class="kelsie-faq-list__control">
+    <span class="kelsie-faq-list__control-label">Category</span>
+    <select class="kelsie-faq-list__filter" aria-controls="<?php echo esc_attr($anchor); ?>">
+      <option value="">All</option>
+      <!-- JS will populate unique categories at runtime -->
+    </select>
+  </label>
+
+  <label class="kelsie-faq-list__control">
+    <span class="kelsie-faq-list__control-label">Search</span>
+    <input type="search" class="kelsie-faq-list__search" placeholder="Type to filter…" aria-controls="<?php echo esc_attr($anchor); ?>" />
+  </label>
+
+  <span class="kelsie-faq-list__count" aria-live="polite"></span>
+</div>
   <div class="kelsie-faq-list__items" role="list">
     <?php $i = 0; foreach ($rows as $row): $i++;
         $q = isset($row[KELSIE_FAQ_QUESTION]) ? wp_strip_all_tags($row[KELSIE_FAQ_QUESTION]) : '';
@@ -43,7 +59,10 @@ if ($is_preview && !empty($rows)) {
         $panel_id   = esc_attr($anchor . '-item-' . $i);
         $summary_id = esc_attr($panel_id . '-summary');
     ?>
-    <details class="kelsie-faq-list__item" id="<?php echo $panel_id; ?>" role="listitem">
+<?php
+  $cats_attr = $cats ? strtolower(implode('|', array_map('sanitize_title', $cats))) : '';
+?>
+<details class="kelsie-faq-list__item" id="<?php echo $panel_id; ?>" role="listitem" data-cats="<?php echo esc_attr($cats_attr); ?>">
       <summary id="<?php echo $summary_id; ?>" class="kelsie-faq-list__question">
         <?php echo esc_html($q ?: 'Untitled question'); ?>
       </summary>

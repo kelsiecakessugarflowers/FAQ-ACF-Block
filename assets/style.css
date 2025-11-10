@@ -87,3 +87,34 @@
   opacity: .6;
   font-style: italic;
 }
+.kelsie-faq-list__toolbar {
+  display: flex;
+  gap: .75rem 1rem;
+  align-items: end;
+  flex-wrap: wrap;
+  margin: 0 0 .75rem;
+}
+
+.kelsie-faq-list__control {
+  display: grid;
+  gap: .25rem;
+}
+
+.kelsie-faq-list__control-label {
+  font-size: .875rem;
+  opacity: .85;
+}
+
+.kelsie-faq-list__filter,
+.kelsie-faq-list__search {
+  padding: .5rem .6rem;
+  border: 1px solid #e5d9e2;
+  background: #fff;
+}
+
+.kelsie-faq-list__count {
+  margin-left: auto;
+  font-size: .875rem;
+  opacity: .8;
+}
+

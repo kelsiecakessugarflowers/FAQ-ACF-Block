@@ -18,6 +18,9 @@ define('KELSIE_FAQ_REPEATER', 'faq_acf_repeater');      // repeater
 define('KELSIE_FAQ_QUESTION', 'faq_question');          // sub field (Text)
 define('KELSIE_FAQ_ANSWER',   'faq_answer');            // sub field (WYSIWYG)
 define('KELSIE_FAQ_CATEGORY', 'faq_category');          // sub field (Checkbox)
+define('KELSIE_FAQ_TAX', 'faq-category');      // actual taxonomy slug
+
+
 
 define('KELSIE_OPTIONS_ID',   'option');                // ACF Options Page id
 define('KELSIE_SCHEMA_KEY',   'kelsie_faq');            // array key in Rank Math graph

@@ -69,6 +69,21 @@ add_action('acf/init', function () {
     }
 });
 
+add_action( 'init', function () {
+    register_taxonomy(
+        'faq_category',
+        [], // no attached post type
+        [
+            'label'        => 'FAQ Categories',
+            'public'       => false,
+            'show_ui'      => true,
+            'hierarchical' => true,
+            'show_in_rest' => true,
+        ]
+    );
+});
+
+
 /** ---------------------------
  *  Rank Math integration (optional)
  * --------------------------- */

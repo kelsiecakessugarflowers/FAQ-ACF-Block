@@ -37,32 +37,44 @@ function kelsie_render_faq_block( $block, $content = '', $is_preview = false ) {
     if ( ! empty( $block['align'] ) )     $class_name .= ' align' . $block['align'];
 
     // Helper: normalize various term shapes to slugs + readable labels
-    $to_terms = function( $terms ) {
-        $out = [];
-        if ( empty( $terms ) ) { return $out; }
-        foreach ( (array) $terms as $term ) {
-            // WP term object
-            if ( is_object( $term ) && isset( $term->slug ) ) {
-                $out[] = ['slug' => sanitize_title( $term->slug ), 'label' => sanitize_text_field( $term->name ?? $term->slug )];
-                continue;
-            }
-            // Numeric (term_id)
-            if ( is_numeric( $term ) ) {
-               $t = get_term( (int) $term, KELSIE_FAQ_TAX );
-                if ( $t && ! is_wp_error( $t ) ) {
-                    $out[] = ['slug' => sanitize_title( $t->slug ), 'label' => sanitize_text_field( $t->name )];
+$to_terms = function( $terms ) {
+    static $cache = []; // term_id => ['slug' => ..., 'label' => ...]
+    $out = [];
+    if (empty($terms)) return $out;
+
+    foreach ((array) $terms as $term) {
+        // Prefer IDs
+        if (is_numeric($term)) {
+            $id = (int) $term;
+            if (!isset($cache[$id])) {
+                $t = get_term($id, KELSIE_FAQ_TAX);
+                if ($t && !is_wp_error($t)) {
+                    $cache[$id] = ['slug' => sanitize_title($t->slug), 'label' => sanitize_text_field($t->name)];
+                } else {
+                    $cache[$id] = null;
                 }
-                continue;
             }
-            // String (slug or label)
-            if ( is_string( $term ) ) {
-                $slug  = sanitize_title( $term );
-                $label = trim( wp_strip_all_tags( $term ) );
-                $out[] = ['slug' => $slug, 'label' => $label ?: $slug];
-            }
+            if ($cache[$id]) $out[] = $cache[$id];
+            continue;
         }
-        return $out;
-    };
+        // Term object fallback
+        if (is_object($term) && isset($term->term_id)) {
+            $id = (int) $term->term_id;
+            if (!isset($cache[$id])) {
+                $cache[$id] = ['slug' => sanitize_title($term->slug), 'label' => sanitize_text_field($term->name ?? $term->slug)];
+            }
+            $out[] = $cache[$id];
+            continue;
+        }
+        // String fallback (slug or label)
+        if (is_string($term)) {
+            $slug  = sanitize_title($term);
+            $label = trim(wp_strip_all_tags($term));
+            $out[] = ['slug' => $slug, 'label' => $label ?: $slug];
+        }
+    }
+    return $out;
+};
 
     // Determine data source: post first, then options
     $context_id = null;
